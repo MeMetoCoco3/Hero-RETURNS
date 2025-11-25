@@ -440,9 +440,16 @@ WinMain(HINSTANCE Instance,
     WindowClass.lpszClassName = "HANDMADE HERO CLASS!";
 
     Win32ResizeDIBSection(&GlobalBackbuffer, WINDOW_WIDTH, WINDOW_HEIGHT);
+    
+    LARGE_INTEGER LastCounter;
+    QueryPerformanceCounter(&LastCounter);
+
+    LARGE_INTEGER PerformanceCounterFrequency; // In Counts/Second.
+    QueryPerformanceFrequency(&PerformanceCounterFrequency);
+
+    GlobalRunning = true;
     if (RegisterClass(&WindowClass))
     {
-	GlobalRunning = true;
 	HWND Window = 
 	    CreateWindowEx(
 		0,
@@ -570,6 +577,16 @@ WinMain(HINSTANCE Instance,
 		win32_window_dimensions Dimensions = Win32GetWindowDimensions(Window);
 		Win32DisplayBufferWindow( DeviceContext, Dimensions.Width, 
 					  Dimensions.Height, GlobalBackbuffer);
+
+		LARGE_INTEGER EndCounter;
+		QueryPerformanceCounter(&EndCounter);
+		i64 CounterElapsed = EndCounter.QuadPart - LastCounter.QuadPart;
+		i64 MSPerFrame = (1000 * CounterElapsed) / PerformanceCounterFrequency.QuadPart;
+		i32 FPS = PerformanceCounterFrequency.QuadPart / CounterElapsed;
+		char Buffer[256];
+		wsprintf(Buffer, "Milliseconds/Frame: %dms FPS: %d\n", MSPerFrame, FPS);
+		OutputDebugStringA(Buffer);
+		LastCounter = EndCounter;
 	    }
 	}
 	else
