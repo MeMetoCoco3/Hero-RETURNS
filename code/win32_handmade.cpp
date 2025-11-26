@@ -446,7 +446,8 @@ WinMain(HINSTANCE Instance,
 
     LARGE_INTEGER PerformanceCounterFrequency; // In Counts/Second.
     QueryPerformanceFrequency(&PerformanceCounterFrequency);
-
+    
+    i64 LastCycleCount = __rdtsc();
     GlobalRunning = true;
     if (RegisterClass(&WindowClass))
     {
@@ -578,15 +579,27 @@ WinMain(HINSTANCE Instance,
 		Win32DisplayBufferWindow( DeviceContext, Dimensions.Width, 
 					  Dimensions.Height, GlobalBackbuffer);
 
+
+		i64 EndCycleCount = __rdtsc();
+
 		LARGE_INTEGER EndCounter;
 		QueryPerformanceCounter(&EndCounter);
+
+		i64 CyclesElapsed = EndCycleCount - LastCycleCount;
 		i64 CounterElapsed = EndCounter.QuadPart - LastCounter.QuadPart;
+
 		i64 MSPerFrame = (1000 * CounterElapsed) / PerformanceCounterFrequency.QuadPart;
 		i32 FPS = PerformanceCounterFrequency.QuadPart / CounterElapsed;
+		i32 MegaCyclesPerFrame =  (i32)(CyclesElapsed / (1000000));
+
 		char Buffer[256];
-		wsprintf(Buffer, "Milliseconds/Frame: %dms FPS: %d\n", MSPerFrame, FPS);
+		wsprintf(Buffer, "M%dms, %dF/s, %dmillionc/f\n", MSPerFrame, FPS, MegaCyclesPerFrame);
 		OutputDebugStringA(Buffer);
+
 		LastCounter = EndCounter;
+		LastCycleCount = EndCycleCount;
+
+
 	    }
 	}
 	else
