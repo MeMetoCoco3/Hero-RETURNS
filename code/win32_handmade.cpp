@@ -1,3 +1,4 @@
+#include "handmade.h"
 #include <windows.h>
 #include <stdint.h>
 #include <math.h>
@@ -35,6 +36,10 @@ typedef struct
 #define local_persist static
 #define global_variable static
 #define internal static
+
+#include "handmade.cpp"
+
+
 
 #define X_INPUT_GET_STATE(name) DWORD WINAPI name(DWORD dwUserIndex, XINPUT_STATE *pState)
 typedef X_INPUT_GET_STATE(x_input_get_state);
@@ -202,24 +207,6 @@ Win32GetWindowDimensions(HWND Window)
     Dimensions.Height = ClientRect.bottom - ClientRect.top;
     
     return Dimensions;
-}
-
-internal void
-RenderWeirdGradient(win32_offscreen_buffer *Buffer, int XOffset, int YOffset)
-{
-    u8 *Row = (u8*) Buffer->Memory;
-    for (int Y = 0; Y < Buffer->Height; ++Y)
-    {
-	u32* Pixel = (u32*)Row;
-	for (int X = 0; X < Buffer->Width; ++X)
-	{
-	    u8 Blue = (X + XOffset);
-	    u8 Green = (Y + YOffset);
-
-	    *Pixel++ =  ((Green << 8) | (Blue));
-	}
-	Row += Buffer->Pitch;
-    }
 }
 
 
@@ -550,9 +537,14 @@ WinMain(HINSTANCE Instance,
 		    }
 		    
 		}
-		RenderWeirdGradient(&GlobalBackbuffer, XOffset, YOffset);
+		
+		game_offscreen_buffer Buffer = {};
+		Buffer.Memory = GlobalBackbuffer.Memory;
+		Buffer.Width = GlobalBackbuffer.Width;
+		Buffer.Height = GlobalBackbuffer.Height;
+		Buffer.Pitch = GlobalBackbuffer.Pitch;
+		GameUpdateAndRender(&Buffer, XOffset, YOffset);
 
-	
 		DWORD PlayCursor;
 		DWORD WriteCursor;
 
@@ -592,10 +584,12 @@ WinMain(HINSTANCE Instance,
 		i32 FPS = PerformanceCounterFrequency.QuadPart / CounterElapsed;
 		i32 MegaCyclesPerFrame =  (i32)(CyclesElapsed / (1000000));
 
+
+		#if 0
 		char Buffer[256];
 		wsprintf(Buffer, "M%dms, %dF/s, %dmillionc/f\n", MSPerFrame, FPS, MegaCyclesPerFrame);
 		OutputDebugStringA(Buffer);
-
+		#endif
 		LastCounter = EndCounter;
 		LastCycleCount = EndCycleCount;
 
